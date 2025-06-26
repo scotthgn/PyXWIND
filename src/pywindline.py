@@ -183,5 +183,19 @@ class pywindline(PyXWIND_object):
 
 if __name__ == '__main__':
     
-    xw = pywindline(r_in=40, kappa=1)
-    xw.calc_windline(45, 6.4, np.linspace(4.5, 7.5, 1000))
+    #xw = pywindline(r_in=40, kappa=1)
+    #xw.calc_windline(45, 6.4, np.linspace(4.5, 7.5, 1000))#
+    
+    #looking for the seg fautl!
+    wnd = pywindline(1e8, 0.1, 10, 1500, 1000, 0.6, 1e-2, 500, 1, -1)
+    ear = np.linspace(4, 7, 1000)
+    ph = wnd.calc_windline(45, 6.0, Ebins=ear, edens_unit=False)
+    
+    plt.plot(0.5*(ear[1:] + ear[:-1]), ph)
+    plt.show()
+    
+    #print(ph)
+    #print(len(ph), len(ear))
+    
+    
+    

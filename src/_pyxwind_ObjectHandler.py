@@ -640,6 +640,7 @@ class PyXWIND_object:
                   ax: None|type(plt.axis) = None,
                   cmap: str = 'jet',
                   cnorm: str = 'log',
+                  cscale = None,
                   inc_cbar: bool = False,
                   cbar_label: str = 'none',
                   cbar_loc: str = 'right',
@@ -663,7 +664,11 @@ class PyXWIND_object:
             DEFAULT: 'jet'.
         cnorm : {'log', 'linear'}
             Colourmap normalisation to use
+            Either a string, or a user defined normalisation scale
             DEFAULT: 'log'
+        cscale : pyplot normalisation scale
+            Optional scale to be passed if the user want more control over 
+            colour normalisation
         inc_cbar : bool
             if True, then adds a colourbar to the axis
             DEFAULT: False
@@ -711,7 +716,7 @@ class PyXWIND_object:
             raise NameError('f{profile_type} invalid. profile_type must be:'
                             ' ndens, vlm vphi, or fluoresence')
         
-        pc = self._do_pcolormapWind(ax, attr, cmap, cnorm, rel_attr)
+        pc = self._do_pcolormapWind(ax, attr, cmap, cnorm, cscale, rel_attr)
         
         if inc_cbar == True:
             if cbar_label == 'none':
@@ -724,7 +729,7 @@ class PyXWIND_object:
         
         if show_axlabel:
             ax.set_xlabel(r'x   $R_{G}$')
-            ax.set_ylabel(r'z   $R_{G}$cd .')
+            ax.set_ylabel(r'z   $R_{G}$')
         
         if show:
             plt.show()
@@ -738,6 +743,7 @@ class PyXWIND_object:
                           attr: str,
                           cmap: str,
                           cnorm: str,
+                          cscale,
                           rel_attr: bool) -> plt.pcolor:
         """
         Does the colourmapping of the wind attribute
@@ -782,9 +788,18 @@ class PyXWIND_object:
         if rel_attr:
             cm_attr = cm_attr/np.amax(cm_attr)
         
-        pc = ax.pcolor(self.x_plt_mesh, self.z_plt_mesh, cm_attr,
-                        vmin=np.amin(cm_attr), vmax=np.amax(cm_attr), 
-                        norm=cnorm, cmap=cmap)
+        if cscale is None:
+            pc = ax.pcolor(self.x_plt_mesh, self.z_plt_mesh, cm_attr,
+                           vmin=np.amin(cm_attr), vmax=np.amax(cm_attr), 
+                           norm=cnorm, cmap=cmap)
+        else:
+            if cnorm == 'log':
+                pc = ax.pcolor(self.x_plt_mesh, self.z_plt_mesh, np.log10(cm_attr), 
+                               norm=cscale, cmap=cmap)
+            else:
+                pc = ax.pcolor(self.x_plt_mesh, self.z_plt_mesh, cm_attr,
+                               norm=cscale, cmap=cmap)
+            
         return pc
     
     def _define_plotGrid(self):
