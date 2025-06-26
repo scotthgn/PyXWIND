@@ -33,7 +33,7 @@ c      NOTE - written to be used with the python wrapper!
        integer Nnew
        parameter(Nnew=8400)
        real e_enew(0:Nnew), ph(Nnew), Enew(0:Nnew) !e_enew defined as Eobs_Eem
-
+       
        integer i, n
 
 cf2py  intent(in) param
@@ -61,9 +61,9 @@ c                       has units: ph/s/cm^2/keV
 c      param(15):   Gamma, incident power-law photon index
 
 c      zeroing input, since additive
-       do i=1, ne, 1
-          photar(i) = 0.0
-       end do
+       !do i=1, ne, 1
+       !   photar(i) = 0.0
+       !end do
        
 c      Defining internal energy grid
 c      Linearly spaced in Eobs_Eem, to give 3eV at 6keV
@@ -75,6 +75,7 @@ c      Range of 0.2 -> 4.4 gives max bulk velocity 0.9c
           e_enew(n) = e_enew(0) + 5e-4*float(n)
           Enew(n) = e_enew(n) * param(13)
        end do
+
        
 c      calling model
        call calc_windline(e_enew, Nnew, param, ph)

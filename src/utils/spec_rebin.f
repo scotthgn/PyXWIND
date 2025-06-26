@@ -23,7 +23,6 @@ cf2py  intent(in) Nnew
        
 cf2py  intent(out) ph_new
 
-
        
        !initialising output array
        do i=1, Nnew, 1
@@ -41,19 +40,24 @@ cf2py  intent(out) ph_new
           end if
        end if
        
-       if ((is_log).or.(is_lin)) then
-          call rebin_evenE(ear,ne,ear_new,Nnew,ldE,ph,ph_new,is_log)
-       else
-          call rebin_noeven(ear,ear_new,ph,ph_new,ne,Nnew)
-       end if
-       
+c       if ((is_log).or.(is_lin)) then
+c          call rebin_evenE(ear,ear_new,ldE,ph,ph_new,is_log,ne,Nnew)
+c       else
+c          call rebin_noeven(ear,ear_new,ph,ph_new,ne,Nnew)
+c       end if
+
+       call rebin_noeven(ear,ear_new,ph,ph_new,ne,Nnew)
        return
        end
 
       
-       subroutine rebin_evenE(ear,ne,ear_new,Nnew,dE,ph,ph_new,is_log)
+       subroutine rebin_evenE(ear,ear_new,dE,ph,ph_new,is_log,ne,Nnew)
 c      If evenly spaced bins (in either lin or log) then can calculate
 c      bin indexes analytically - no need to iterate
+c
+c      TO DO: Currently Unstable and prone to seg faults
+c      Need to de-bug!
+c      For now, this won't get calles
        implicit none
 
        integer ne, Nnew
@@ -79,6 +83,7 @@ cf2py  intent(in) ph_new
 cf2py  intent(in) is_log
 
 cf2py  intent(out) ph_new       
+
        
        do i=1, ne, 1
           if (is_log) then
@@ -93,6 +98,9 @@ cf2py  intent(out) ph_new
           if ((enew_idx1.ge.Nnew).or.(enew_idx2.le.0)) then !upper edge case
              continue
 
+          else if (enew_idx1.gt.enew_idx2) then
+             continue
+             
           else if (enew_idx1.eq.enew_idx2) then !new bin fully containes old
              ph_new(enew_idx1) = ph_new(enew_idx1) + ph(i)
              
@@ -114,6 +122,10 @@ cf2py  intent(out) ph_new
              fb1 = (ear_new(enew_idx1) - ear(i-1))/dE_old !fractional overlap
              fb2 = 1.0 - fb1
 
+             if (fb1.lt.0.0) then
+                write(*,*) fb1, ear_new(enew_idx1), ear(i-1),enew_idx1,i
+             end if
+                
              ph_new(enew_idx1) = ph_new(enew_idx1) + fb1*ph(i)
              ph_new(enew_idx2) = ph_new(enew_idx2) + fb2*ph(i)
           end if
