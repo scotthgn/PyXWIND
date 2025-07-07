@@ -136,7 +136,7 @@ class pywindline(PyXWIND_object):
     
     
     def calc_windfe(self, inc: float, N0: float, gamma: float, Ebins: ArrayLike,
-                    edens_unit: bool = True) -> ArrayLike:
+                    edens_unit: bool = True, give_EW: bool = False) -> ArrayLike:
         """
         Windline profile specifically for Fe-Kalpha
         Normalisation calculated from the wind density/fluoresence profile
@@ -159,6 +159,9 @@ class pywindline(PyXWIND_object):
         edens_units : bool, optional
             If True, converts output array to photons/s/cm^2/keV
             DEFAULT: True
+        give_EW : bool, optional
+            If True, then evaluates and also returns the equivalent width of the 
+            line in units of keV
 
         Returns
         -------
@@ -175,10 +178,20 @@ class pywindline(PyXWIND_object):
         
         ph = windline(wpars, Ebins, False, len(Ebins)-1) #ph/s/cm^2/bin
         
+        if give_EW:
+            ph_tot = np.sum(ph)
+            cont = N0 * 6.4**(-gamma)
+            EW = ph_tot/cont #keV
+        
         if edens_unit:
             ph = ph/(Ebins[1:] - Ebins[:-1]) #ph/s/cm^2/keV
         
-        return ph
+        if give_EW:
+            return ph, EW
+        else:
+            return ph
+    
+        
         
 
 if __name__ == '__main__':

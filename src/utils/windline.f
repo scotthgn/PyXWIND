@@ -155,7 +155,7 @@ c      Setting physical constants
 
 c      Setting wind resolution
        dlog_r = 0.01
-       dcos_theta = 0.001
+       dcos_theta = 0.002
        dphi = 0.001
 
 c      Reading parameters
@@ -168,7 +168,7 @@ c      Reading parameters
        vinf = dble(param(7))
        rv = dble(param(8))
        vexp = dble(param(9))
-       kappa = -1.0*dble(param(10))
+       kappa = dble(param(10))
        inc = (pi * dble(param(11)))/180.0
        Afe = 4.68d-5 * dble(param(12)) !uses abund from Anderson & Grevesse 1989
        E0 = dble(param(13))

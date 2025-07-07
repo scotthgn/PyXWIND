@@ -38,7 +38,7 @@ class PyXWIND_object:
     """
     
     
-    dcos_theta = 0.001
+    dcos_theta = 0.002
     dlog_r = 0.01
     dphi = 0.001
     
@@ -837,4 +837,4 @@ if __name__ == '__main__':
     xw = PyXWIND_object(r_out=1000, mdot_w=0.01)
     #xw.calc_fluoresence()
     
-    xw.plot_wind('vphi', inc_cbar=True, cbar_loc='right', show=True)
+    xw.plot_wind('ndens', inc_cbar=True, cbar_loc='right', show=True)
