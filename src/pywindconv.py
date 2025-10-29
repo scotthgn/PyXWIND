@@ -15,10 +15,10 @@ import astropy.units as u
 from numpy.typing import ArrayLike
 
 from _pyxwind_ObjectHandler import PyXWIND_object
-from utils.xwind import windconv
+from utils.xwind import xwindconv
 
 
-class pywindconv(PyXWIND_object):
+class xw_conv(PyXWIND_object):
     """
     Convolution kernel for windline.
     
@@ -163,7 +163,7 @@ class pywindconv(PyXWIND_object):
         return
     
     
-    def do_convolve(self, inc: float, conv_unit: bool = True):
+    def do_convolve(self, inc: float, vturb: float = 0, conv_unit: bool = True):
         """
         
 
@@ -190,12 +190,13 @@ class pywindconv(PyXWIND_object):
                                  ' using set_input_spectrum(ear, ph, eunit, phunit) method')
         
         
-        wpars = [self.Mbh, self.mdot_w, self.r_in, self.r_out, self.d_foci,
-                 self.fcov, self.vinf, self.rv, self.beta, self.kappa, inc]
+        wpars = [self.mdot_w, self.r_in, self.r_out, self.d_foci,
+                 self.fcov, self.vinf, self.rv, self.beta, vturb, self.kappa, inc]
+        
         
         #print()
         #photon/s/cm^2/bin
-        self.ph_conv = windconv(wpars, self.ear, self.ph, len(self.ear)-1)
+        self.ph_conv = xwindconv(wpars, self.ear, self.ph, len(self.ear)-1)
         
         #print()
         #print(self.ph_conv)
@@ -485,8 +486,8 @@ class pywindconv(PyXWIND_object):
 
 
 if __name__ == '__main__':
-    phc = pywindconv(r_in=40, vinf=0.5)
     
+    phc = xw_conv(r_in=40, vinf=0.5)
     def gau(eas, s0, x0):
         g = np.exp(-0.5 * ((eas - x0)/s0)**2)
         return g

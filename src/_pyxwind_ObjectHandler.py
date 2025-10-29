@@ -479,11 +479,43 @@ class PyXWIND_object:
         cos_inc = np.cos(np.deg2rad(inc))
         #index of low bin edge
         idx_low = int(len(self.cos_th_bins[self.cos_th_bins <= cos_inc]) - 1)
+        drs = 10**(self.log_rbins[1:]) - 10**(self.log_rbins[:-1]) #radial bin widths in Rg
         if self.cos_th_bins[idx_low] == self.cos_th_bins[-1]:
             return 0
         else:
-            return np.sum(self.dr*self.Rg * self.ndens[:, idx_low])
+            return np.ma.sum(drs*self.Rg * self.ndens[:, idx_low])
     
+    
+    def calc_NH_profile(self) -> ArrayLike:
+        """
+        Calculates NH profile of wind as a function of theta.
+        Uses internal cos_theta grid
+        
+
+        Returns
+        -------
+        NHarr : ArrayLike
+            Column-density through the wind as a function of theta
+            Units : cm^-2
+        thetas : ArrayLike
+            Also gives the relevant theta array (evaluated in centre of cos_th bins)
+            This is to avoid the user having to deal with internal array structure
+            Units : deg
+
+        """
+    
+        #generating output theta arr
+        thetas = np.acos(self.cos_th_bins[:-1] + 0.5*self.dcos_theta)
+        thetas = np.rad2deg(thetas)
+        
+        #generating outpt Nh arr
+        NHarr = np.empty_like(thetas)
+        drs = 10**(self.log_rbins[1:]) - 10**(self.log_rbins[:-1]) #radial bin widths in Rg
+        for i in range(len(thetas)):
+            NHarr[i] = np.ma.sum(drs*self.Rg * self.ndens[:, i])
+        
+        return NHarr, thetas
+        
     
     ###########################################################################
     #### ABSORPTION AND EMISSIVITY
@@ -631,6 +663,29 @@ class PyXWIND_object:
         #self.fluoresence_valid = self.fluoresence[self.grid_mask==False] 
 
 
+    def calc_volumeEmissivity(self):
+        """
+        Calculates volumetric emissivity of each wind cell
+        
+        Simply divides thr fluoresence by the volume-element of each cell
+        (i.e dV = R^2 sin(theta) dR dtheta dphi)
+
+        Returns
+        -------
+        None
+        """
+
+        if hasattr(self, 'fluoresence'):    
+            pass
+        else:
+            self.calc_fluoresence()
+        
+        drs = 10**(self.log_rbins[1:]) - 10**(self.log_rbins[:-1])
+        dV = self.rmids**2 * drs[:, np.newaxis] * self.Rg**3 * self.dcos_theta * self.dphi
+
+        self.vol_emiss = self.fluoresence/dV
+
+
     ###########################################################################
     #---- PLOTTING METHODS
     ###########################################################################
@@ -652,7 +707,7 @@ class PyXWIND_object:
         
         Parameters
         ----------
-        profile_type : {'ndens', 'vl', 'vphi', 'fluoresence', 'rel_emiss'}
+        profile_type : {'ndens', 'vl', 'vphi', 'fluoresence', 'rel_emiss', 'vol_emiss'}
             What wind parameter to plot in profile
             Shown as colour gradient
         ax : None|plt.Axis
@@ -711,6 +766,10 @@ class PyXWIND_object:
             attr = 'fluoresence'
             rel_attr = True
             cpar = 'Emissivity'
+            cunit = ''
+        elif profile_type == 'vol_emiss':
+            attr = 'vol_emiss'
+            cpar = 'Volumetric Emissivity'
             cunit = ''
         else:
             raise NameError('f{profile_type} invalid. profile_type must be:'
@@ -780,6 +839,8 @@ class PyXWIND_object:
                 self.calc_velocity_profile()
             elif attr == 'fluoresence':
                 self.calc_fluoresence()
+            elif attr == 'vol_emiss':
+                self.calc_volumeEmissivity()
             else:
                 raise NameError(f'{attr} not valid!')
             
