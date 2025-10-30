@@ -771,6 +771,11 @@ class PyXWIND_object:
             attr = 'vol_emiss'
             cpar = 'Volumetric Emissivity'
             cunit = ''
+        elif profile_type == 'rel_vol_emiss':
+            attr = 'vol_emiss'
+            rel_attr = True
+            cpar = 'Volumetric emissivity'
+            cunit = r'$N_{\gamma}/(dV N_{\gamma, max}$'
         else:
             raise NameError('f{profile_type} invalid. profile_type must be:'
                             ' ndens, vlm vphi, or fluoresence')
