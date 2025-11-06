@@ -48,12 +48,12 @@ class PyXWIND_object:
     
     def __init__(self,
                  Mbh: float = 1e8,
-                 mdot_w: float = 0.1,
+                 log_mdot_w: float = -3.0,
                  r_in: float = 500,
                  r_out: float = 1000,
                  d_foci: float = 500,
                  fcov: float = 0.5,
-                 vinf: float = 1e-2,
+                 log_vinf: float = -3.0,
                  rv: float = 100,
                  beta: float = 1,
                  kappa: float = -1,
@@ -65,8 +65,8 @@ class PyXWIND_object:
             Black hole mass.
             UNITS: Msol
             DEFAULT: 1e8.
-        mdot_w : float
-            Eddington scaled mass-outflow rate
+        log_mdot_w : float
+            Log10 Eddington scaled mass-outflow rate
             UNITS: Mdot/Mdot_edd
             DEFAULT: 0.1
         r_in : float
@@ -85,8 +85,8 @@ class PyXWIND_object:
             Covering fraction of wind, including both sides of the disc
             UNITS: Omega/4pi
             DEFAULT: 0.5
-        vinf : float
-            Outflow velcotiy at infinity
+        log_vinf : float
+            log10 Outflow velcotiy at infinity
             UNITS: c
             DEFAULT: 1e-2
         rv : flaot
@@ -114,12 +114,12 @@ class PyXWIND_object:
 
         #Read pars
         self.Mbh = float(Mbh)
-        self.mdot_w = float(mdot_w)
+        self.mdot_w, self.log_mdot_w = float(10**log_mdot_w), log_mdot_w
         self.r_in = float(r_in)
         self.r_out = float(r_out)
         self.d_foci = float(d_foci)
         self.fcov = float(fcov)
-        self.vinf = float(vinf)
+        self.vinf, self.log_vinf = float(10**log_vinf), log_vinf
         self.rv = float(rv)        
         self.beta = float(beta)
         self.kappa = float(kappa)
@@ -233,6 +233,7 @@ class PyXWIND_object:
     
         if np.arccos(self.fcov) <= np.arctan(self.r_in/self.d_foci):
             print('WARNING! Covering fraction fcov is never reached for input wind!')
+            print(self.fcov, self.r_in, self.d_foci)
             th_min = np.arctan(self.r_in/self.d_foci) + 0.1
             self.fcov = np.cos(th_min)
             print(f'Updating covering fraction to: {self.fcov}')
@@ -479,11 +480,43 @@ class PyXWIND_object:
         cos_inc = np.cos(np.deg2rad(inc))
         #index of low bin edge
         idx_low = int(len(self.cos_th_bins[self.cos_th_bins <= cos_inc]) - 1)
+        drs = 10**(self.log_rbins[1:]) - 10**(self.log_rbins[:-1]) #radial bin widths in Rg
         if self.cos_th_bins[idx_low] == self.cos_th_bins[-1]:
             return 0
         else:
-            return np.sum(self.dr*self.Rg * self.ndens[:, idx_low])
+            return np.ma.sum(drs*self.Rg * self.ndens[:, idx_low])
     
+    
+    def calc_NH_profile(self) -> ArrayLike:
+        """
+        Calculates NH profile of wind as a function of theta.
+        Uses internal cos_theta grid
+        
+
+        Returns
+        -------
+        NHarr : ArrayLike
+            Column-density through the wind as a function of theta
+            Units : cm^-2
+        thetas : ArrayLike
+            Also gives the relevant theta array (evaluated in centre of cos_th bins)
+            This is to avoid the user having to deal with internal array structure
+            Units : deg
+
+        """
+    
+        #generating output theta arr
+        thetas = np.acos(self.cos_th_bins[:-1] + 0.5*self.dcos_theta)
+        thetas = np.rad2deg(thetas)
+        
+        #generating outpt Nh arr
+        NHarr = np.empty_like(thetas)
+        drs = 10**(self.log_rbins[1:]) - 10**(self.log_rbins[:-1]) #radial bin widths in Rg
+        for i in range(len(thetas)):
+            NHarr[i] = np.ma.sum(drs*self.Rg * self.ndens[:, i])
+        
+        return NHarr, thetas
+        
     
     ###########################################################################
     #### ABSORPTION AND EMISSIVITY
@@ -631,6 +664,29 @@ class PyXWIND_object:
         #self.fluoresence_valid = self.fluoresence[self.grid_mask==False] 
 
 
+    def calc_volumeEmissivity(self):
+        """
+        Calculates volumetric emissivity of each wind cell
+        
+        Simply divides thr fluoresence by the volume-element of each cell
+        (i.e dV = R^2 sin(theta) dR dtheta dphi)
+
+        Returns
+        -------
+        None
+        """
+
+        if hasattr(self, 'fluoresence'):    
+            pass
+        else:
+            self.calc_fluoresence()
+        
+        drs = 10**(self.log_rbins[1:]) - 10**(self.log_rbins[:-1])
+        dV = self.rmids**2 * drs[:, np.newaxis] * self.Rg**3 * self.dcos_theta * self.dphi
+
+        self.vol_emiss = self.fluoresence/dV
+
+
     ###########################################################################
     #---- PLOTTING METHODS
     ###########################################################################
@@ -652,7 +708,7 @@ class PyXWIND_object:
         
         Parameters
         ----------
-        profile_type : {'ndens', 'vl', 'vphi', 'fluoresence', 'rel_emiss'}
+        profile_type : {'ndens', 'vl', 'vphi', 'fluoresence', 'rel_emiss', 'vol_emiss'}
             What wind parameter to plot in profile
             Shown as colour gradient
         ax : None|plt.Axis
@@ -712,6 +768,15 @@ class PyXWIND_object:
             rel_attr = True
             cpar = 'Emissivity'
             cunit = ''
+        elif profile_type == 'vol_emiss':
+            attr = 'vol_emiss'
+            cpar = 'Volumetric Emissivity'
+            cunit = ''
+        elif profile_type == 'rel_vol_emiss':
+            attr = 'vol_emiss'
+            rel_attr = True
+            cpar = 'Volumetric emissivity'
+            cunit = r'$N_{\gamma}/(dV N_{\gamma, max}$'
         else:
             raise NameError('f{profile_type} invalid. profile_type must be:'
                             ' ndens, vlm vphi, or fluoresence')
@@ -780,6 +845,8 @@ class PyXWIND_object:
                 self.calc_velocity_profile()
             elif attr == 'fluoresence':
                 self.calc_fluoresence()
+            elif attr == 'vol_emiss':
+                self.calc_volumeEmissivity()
             else:
                 raise NameError(f'{attr} not valid!')
             

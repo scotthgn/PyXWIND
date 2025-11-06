@@ -14,20 +14,20 @@ import matplotlib.pyplot as plt
 from numpy.typing import ArrayLike
 
 from _pyxwind_ObjectHandler import PyXWIND_object
-from utils.xwind import windline
+from utils.xwind import xwindline, xwindfe
 
 
-class pywindline(PyXWIND_object):
+class xw_line(PyXWIND_object):
     
     
     def __init__(self,
                  Mbh: float = 1e8,
-                 mdot_w: float = 0.1,
+                 log_mdot_w: float = -3,
                  r_in: float = 500,
                  r_out: float = 1000,
                  d_foci: float = 500,
                  fcov: float = 0.5,
-                 vinf: float = 1e-2,
+                 log_vinf: float = -3,
                  rv: float = 100,
                  beta: float = 1,
                  kappa: float = -1,
@@ -37,10 +37,12 @@ class pywindline(PyXWIND_object):
         ----------
         Mbh : float
             Black hole mass.
+            NOTE - does not affect line-profile. Only needed for wind property
+            profiles in physical units
             UNITS: Msol
             DEFAULT: 1e8.
-        mdot_w : float
-            Eddington scaled mass-outflow rate
+        log_mdot_w : float
+            log10 Eddington scaled mass-outflow rate
             UNITS: Mdot/Mdot_edd
             DEFAULT: 0.1
         r_in : float
@@ -59,8 +61,8 @@ class pywindline(PyXWIND_object):
             Covering fraction of wind, including both sides of the disc
             UNITS: Omega/4pi
             DEFAULT: 0.5
-        vinf : float
-            Outflow velcotiy at infinity
+        log_vinf : float
+            log10 Outflow velcotiy at infinity
             UNITS: c
             DEFAULT: 1e-2
         rv : flaot
@@ -86,12 +88,12 @@ class pywindline(PyXWIND_object):
             Default: 1
         """
         
-        super().__init__(Mbh, mdot_w, r_in, r_out, d_foci, fcov, vinf, rv,
+        super().__init__(Mbh, log_mdot_w, r_in, r_out, d_foci, fcov, log_vinf, rv,
                          beta, kappa, Afe)
 
 
-    def calc_windline(self, inc: float, E0: float, Ebins: ArrayLike,
-                      edens_unit: bool = True) -> ArrayLike:
+    def calc_xwindline(self, inc: float, E0: float, Ebins: ArrayLike,
+                       vturb: float = 0, edens_unit: bool = True) -> ArrayLike:
         """
         Calculates windline profile.
         Normalisation set s.t the total photon flux integrates to unity
@@ -109,6 +111,10 @@ class pywindline(PyXWIND_object):
             Output energy bin edges
             (note internal energy reolution is set to E/E0 = 5e-4)
             Units : keV
+        vturb : float
+            Turbulent velocity. Gives smoothing of line profile via 
+            convolution with a Gaussian
+            Units : km/s
         edens_unit : bool
             If True, converts output array to photons/s/cm^2/keV
             DEFAULT: True
@@ -123,11 +129,10 @@ class pywindline(PyXWIND_object):
 
         """
         
-        wpars = [self.Mbh, self.mdot_w, self.r_in, self.r_out, self.d_foci,
-                 self.fcov, self.vinf, self.rv, self.beta, self.kappa, inc, 
-                 self.Afe, E0, 1, 2.0]
+        wpars = [self.mdot_w, self.r_in, self.r_out, self.d_foci,
+                 self.fcov, self.vinf, self.rv, self.beta, vturb, self.kappa, inc, E0]
         
-        ph = windline(wpars, Ebins, True, len(Ebins)-1) #ph/s/cm^2/bin
+        ph = xwindline(wpars, Ebins, len(Ebins)-1) #ph/s/cm^2/bin
         
         if edens_unit:
             ph = ph/(Ebins[1:] - Ebins[:-1]) #ph/s/cm^2/keV
@@ -135,8 +140,8 @@ class pywindline(PyXWIND_object):
         return ph
     
     
-    def calc_windfe(self, inc: float, N0: float, gamma: float, Ebins: ArrayLike,
-                    edens_unit: bool = True, give_EW: bool = False) -> ArrayLike:
+    def calc_xwindfe(self, inc: float, N0: float, gamma: float, Ebins: ArrayLike,
+                     vturb: float = 0, edens_unit: bool = True, give_EW: bool = False) -> ArrayLike:
         """
         Windline profile specifically for Fe-Kalpha
         Normalisation calculated from the wind density/fluoresence profile
@@ -156,6 +161,10 @@ class pywindline(PyXWIND_object):
             Output energy bin edges
             (note internal energy reolution is set to E/E0 = 5e-4)
             Units : keV
+        vturb : float
+            Turbulent velocity. Gives smoothing of line profile via 
+            convolution with a Gaussian
+            Units : km/s
         edens_units : bool, optional
             If True, converts output array to photons/s/cm^2/keV
             DEFAULT: True
@@ -172,11 +181,11 @@ class pywindline(PyXWIND_object):
 
         """
         
-        wpars = [self.Mbh, self.mdot_w, self.r_in, self.r_out, self.d_foci,
-                 self.fcov, self.vinf, self.rv, self.beta, self.kappa, inc, 
-                 self.Afe, 6.4, N0, gamma]
+        wpars = [self.mdot_w, self.r_in, self.r_out, self.d_foci,
+                 self.fcov, self.vinf, self.rv, self.beta, vturb, self.kappa, inc, 
+                 self.Afe, N0, gamma]
         
-        ph = windline(wpars, Ebins, False, len(Ebins)-1) #ph/s/cm^2/bin
+        ph = xwindfe(wpars, Ebins, len(Ebins)-1) #ph/s/cm^2/bin
         
         if give_EW:
             ph_tot = np.sum(ph)
@@ -196,16 +205,48 @@ class pywindline(PyXWIND_object):
 
 if __name__ == '__main__':
     
-    #xw = pywindline(r_in=40, kappa=1)
-    #xw.calc_windline(45, 6.4, np.linspace(4.5, 7.5, 1000))#
+    #testing
+    #wnd = xw_line(1e8, 0.1, 1000, 10000, 2000, 0.8, 1e-2, 500, 1, -1)
+    wnd = xw_line(2e7, -4, 2022.22, 5055.55, 3502.59, 0.4998, -4,
+                  200, 1, 1)
     
-    #looking for the seg fautl!
-    wnd = pywindline(1e8, 0.1, 10, 1500, 1000, 0.6, 1e-2, 500, 1, -1)
-    ear = np.linspace(4, 7, 1000)
-    ph = wnd.calc_windline(45, 6.0, Ebins=ear, edens_unit=False)
+    ear = np.linspace(5, 7, 1000)
     
-    plt.plot(0.5*(ear[1:] + ear[:-1]), ph)
+    
+    #line profile
+    #ph = wnd.calc_xwindline(45, 6.0, Ebins=ear, edens_unit=True)
+    ph = wnd.calc_xwindfe(45, 8.496e-2, 1.8, Ebins=ear, edens_unit=True)
+    
+    fig_line = plt.figure(figsize=(7, 7))
+    ax_line = fig_line.add_subplot(111)
+    ax_line.plot(0.5*(ear[1:] + ear[:-1]), ph)
+    ax_line.set_yscale('log')
+    
+    """
+    
+    #wind profiles
+    fig_prof = plt.figure(figsize=(8, 8))
+    ax_wnd = fig_prof.add_subplot(111)
+    wnd.plot_wind('ndens', show=False, ax=ax_wnd)
+    
+    fig_lum = plt.figure(figsize=(8, 8))
+    ax_lum = fig_lum.add_subplot(111)
+    wnd.plot_wind('vol_emiss', show=False, ax=ax_lum, cmap='hot')
+    
+
+    #Nh
+    nh = wnd.calc_los_NH(90)
+    NHprof, thetas = wnd.calc_NH_profile()
+    
+    fig_nh = plt.figure(figsize=(7, 7))
+    ax_nh = fig_nh.add_subplot(111)
+    ax_nh.plot(thetas, NHprof)
+    ax_nh.set_yscale('log')
+    
+    """
     plt.show()
+    
+    
     
     #print(ph)
     #print(len(ph), len(ear))
