@@ -28,12 +28,12 @@ class xw_conv(PyXWIND_object):
     
     def __init__(self,
                  Mbh: float = 1e8,
-                 mdot_w: float = 0.1,
+                 log_mdot_w: float = -3,
                  r_in: float = 500,
                  r_out: float = 1000,
                  d_foci: float = 500,
                  fcov: float = 0.5,
-                 vinf: float = 1e-2,
+                 log_vinf: float = -3,
                  rv: float = 100,
                  beta: float = 1,
                  kappa: float = -1):
@@ -88,7 +88,7 @@ class xw_conv(PyXWIND_object):
                Default: 1
         """
         
-        super().__init__(Mbh, mdot_w, r_in, r_out, d_foci, fcov, vinf, rv,
+        super().__init__(Mbh, log_mdot_w, r_in, r_out, d_foci, fcov, log_vinf, rv,
                          beta, kappa)
         
         return
@@ -487,7 +487,7 @@ class xw_conv(PyXWIND_object):
 
 if __name__ == '__main__':
     
-    phc = xw_conv(r_in=40, vinf=0.5)
+    phc = xw_conv(r_in=40, log_vinf=-1)
     def gau(eas, s0, x0):
         g = np.exp(-0.5 * ((eas - x0)/s0)**2)
         return g

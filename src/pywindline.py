@@ -22,12 +22,12 @@ class xw_line(PyXWIND_object):
     
     def __init__(self,
                  Mbh: float = 1e8,
-                 mdot_w: float = 0.1,
+                 log_mdot_w: float = -3,
                  r_in: float = 500,
                  r_out: float = 1000,
                  d_foci: float = 500,
                  fcov: float = 0.5,
-                 vinf: float = 1e-2,
+                 log_vinf: float = -3,
                  rv: float = 100,
                  beta: float = 1,
                  kappa: float = -1,
@@ -41,8 +41,8 @@ class xw_line(PyXWIND_object):
             profiles in physical units
             UNITS: Msol
             DEFAULT: 1e8.
-        mdot_w : float
-            Eddington scaled mass-outflow rate
+        log_mdot_w : float
+            log10 Eddington scaled mass-outflow rate
             UNITS: Mdot/Mdot_edd
             DEFAULT: 0.1
         r_in : float
@@ -61,8 +61,8 @@ class xw_line(PyXWIND_object):
             Covering fraction of wind, including both sides of the disc
             UNITS: Omega/4pi
             DEFAULT: 0.5
-        vinf : float
-            Outflow velcotiy at infinity
+        log_vinf : float
+            log10 Outflow velcotiy at infinity
             UNITS: c
             DEFAULT: 1e-2
         rv : flaot
@@ -88,7 +88,7 @@ class xw_line(PyXWIND_object):
             Default: 1
         """
         
-        super().__init__(Mbh, mdot_w, r_in, r_out, d_foci, fcov, vinf, rv,
+        super().__init__(Mbh, log_mdot_w, r_in, r_out, d_foci, fcov, log_vinf, rv,
                          beta, kappa, Afe)
 
 
@@ -207,7 +207,7 @@ if __name__ == '__main__':
     
     #testing
     #wnd = xw_line(1e8, 0.1, 1000, 10000, 2000, 0.8, 1e-2, 500, 1, -1)
-    wnd = xw_line(2e7, 6.849e-3, 2022.22, 5055.55, 3502.59, 0.4998, 2.40912e-4,
+    wnd = xw_line(2e7, -4, 2022.22, 5055.55, 3502.59, 0.4998, -4,
                   200, 1, 1)
     
     ear = np.linspace(5, 7, 1000)

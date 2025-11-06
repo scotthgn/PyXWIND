@@ -48,12 +48,12 @@ class PyXWIND_object:
     
     def __init__(self,
                  Mbh: float = 1e8,
-                 mdot_w: float = 0.1,
+                 log_mdot_w: float = -3.0,
                  r_in: float = 500,
                  r_out: float = 1000,
                  d_foci: float = 500,
                  fcov: float = 0.5,
-                 vinf: float = 1e-2,
+                 log_vinf: float = -3.0,
                  rv: float = 100,
                  beta: float = 1,
                  kappa: float = -1,
@@ -65,8 +65,8 @@ class PyXWIND_object:
             Black hole mass.
             UNITS: Msol
             DEFAULT: 1e8.
-        mdot_w : float
-            Eddington scaled mass-outflow rate
+        log_mdot_w : float
+            Log10 Eddington scaled mass-outflow rate
             UNITS: Mdot/Mdot_edd
             DEFAULT: 0.1
         r_in : float
@@ -85,8 +85,8 @@ class PyXWIND_object:
             Covering fraction of wind, including both sides of the disc
             UNITS: Omega/4pi
             DEFAULT: 0.5
-        vinf : float
-            Outflow velcotiy at infinity
+        log_vinf : float
+            log10 Outflow velcotiy at infinity
             UNITS: c
             DEFAULT: 1e-2
         rv : flaot
@@ -114,12 +114,12 @@ class PyXWIND_object:
 
         #Read pars
         self.Mbh = float(Mbh)
-        self.mdot_w = float(mdot_w)
+        self.mdot_w, self.log_mdot_w = float(10**log_mdot_w), log_mdot_w
         self.r_in = float(r_in)
         self.r_out = float(r_out)
         self.d_foci = float(d_foci)
         self.fcov = float(fcov)
-        self.vinf = float(vinf)
+        self.vinf, self.log_vinf = float(10**log_vinf), log_vinf
         self.rv = float(rv)        
         self.beta = float(beta)
         self.kappa = float(kappa)
@@ -233,6 +233,7 @@ class PyXWIND_object:
     
         if np.arccos(self.fcov) <= np.arctan(self.r_in/self.d_foci):
             print('WARNING! Covering fraction fcov is never reached for input wind!')
+            print(self.fcov, self.r_in, self.d_foci)
             th_min = np.arctan(self.r_in/self.d_foci) + 0.1
             self.fcov = np.cos(th_min)
             print(f'Updating covering fraction to: {self.fcov}')
