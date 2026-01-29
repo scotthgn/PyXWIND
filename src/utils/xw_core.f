@@ -318,9 +318,9 @@ c      s.t photons traevl in straight (ish) lines
 
        eshift_inv = sin(inc) * (vr*cos(phi) - vphi*sin(phi))
        eshift_inv = eshift_inv + vz*cos(phi)
-       eshift_inv = eshift_inv*(-1.0) + (1.0-(1.0/(4.0*r**2.0)))**(2.0)
-       eshift_inv = eshift_inv*gamma*(1.0+(1.0/(2.0*r)))**(4.0)
-
+       eshift_inv = eshift_inv*(-1.0) + 1.0
+       eshift_inv = eshift_inv*gamma*(1.0 - (2.0/r))**(-0.5)
+       
        energy_shift = 1/eshift_inv
        return
        end
