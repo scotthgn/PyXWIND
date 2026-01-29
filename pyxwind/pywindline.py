@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 
 from numpy.typing import ArrayLike
 
-from _pyxwind_ObjectHandler import PyXWIND_object
-from utils.xwind import xwindline, xwindfe
+from ._pyxwind_ObjectHandler import PyXWIND_object
+from .utils.xwind import xwindline, xwindfe
 
 
 class xw_line(PyXWIND_object):
