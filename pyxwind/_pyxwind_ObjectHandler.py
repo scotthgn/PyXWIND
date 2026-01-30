@@ -504,6 +504,11 @@ class PyXWIND_object:
             Units : deg
 
         """
+        
+        if hasattr(self, 'ndens'):
+            pass
+        else:
+            self._calc_ndens()
     
         #generating output theta arr
         thetas = np.acos(self.cos_th_bins[:-1] + 0.5*self.dcos_theta)
