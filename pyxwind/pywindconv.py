@@ -29,12 +29,12 @@ class xw_conv(PyXWIND_object):
     def __init__(self,
                  Mbh: float = 1e8,
                  log_mdot_w: float = -3,
-                 r_in: float = 500,
-                 r_out: float = 1000,
-                 d_foci: float = 500,
+                 r_in: float = 1000,
+                 r_out: float = 1500,
+                 d_foci: float = 1700,
                  fcov: float = 0.5,
                  log_vinf: float = -3,
-                 rv: float = 100,
+                 rv: float = 1000,
                  beta: float = 1,
                  kappa: float = -1):
         """
@@ -52,20 +52,20 @@ class xw_conv(PyXWIND_object):
         r_in : float
             Inner launch radius
             UNITS: Rg
-            DEFAULT: 500
+            DEFAULT: 1000
         r_out : float
             Outer launch radius
             UNITS: Rg
-            DEFAULT: 1000
+            DEFAULT: 1500
         d_foci : float
             Distance below the origin to wind foci
             UNITS: Rg
-            DEFAULT: 500
+            DEFAULT: 1700
         fcov : float
             Covering fraction of wind, including both sides of the disc
             UNITS: Omega/4pi
             DEFAULT: 0.5
-        vinf : float
+        log_vinf : float
             Outflow velcotiy at infinity
             UNITS: c
             DEFAULT: 1e-2
@@ -73,7 +73,7 @@ class xw_conv(PyXWIND_object):
             Velocity scale length. Distance along streamline where the velocity
             reaches 0.5 vinf
             UNITS: Rg
-            DEFAULT: 100
+            DEFAULT: 1000
         beta : float
             Velocity law exponent. Determines acceleration along streamline
             UNITS: dimensionless
@@ -81,11 +81,7 @@ class xw_conv(PyXWIND_object):
         kappa : float
             Wind density gradient exponent at surface.
             Defined as dMdot/dR propto R^(-kappa)
-            IF negative, then treated as log number density for a constant 
-            density wind
-        UNITS: dimensionless IF >= 0
-               log cm^-3     IF < 0
-               Default: 1
+            Default: 1
         """
         
         super().__init__(Mbh, log_mdot_w, r_in, r_out, d_foci, fcov, log_vinf, rv,
