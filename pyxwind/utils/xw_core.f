@@ -29,7 +29,7 @@ c      The input spectrum to calculate the fluoresence is a simple power-law
 c      between 7 and 40 keV
 c      -----------------------------------------------------------------
 c
-c      For details, see Hagen, Done & Matzeu (in prep)
+c      For details, see Hagen, Done, Matzeu & Noda (2026)
 c      
 c      -----------------------------------------------------------------
 c      -----------------------------------------------------------------
@@ -317,7 +317,7 @@ c      s.t photons traevl in straight (ish) lines
        gamma = 1/sqrt(1 - (vr**2 + vz**2 + vphi**2)) !Lorentz factor
 
        eshift_inv = sin(inc) * (vr*cos(phi) - vphi*sin(phi))
-       eshift_inv = eshift_inv + vz*cos(phi)
+       eshift_inv = eshift_inv + vz*cos(inc)
        eshift_inv = eshift_inv*(-1.0) + 1.0
        eshift_inv = eshift_inv*gamma*(1.0 - (2.0/r))**(-0.5)
        
